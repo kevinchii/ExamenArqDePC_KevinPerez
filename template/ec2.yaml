@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: EC2 creada desde GitHub Actions
+
+Parameters:
+  InstanceDescription:
+    Description: Descripcion del servidor web
+    Type: String
+    Default: Servidor Web Apache
+
+  SecurityGroupDescription:
+    Description: Security Group Description
+    Type: String
+    Default: Acceso HTTP al servidor
+
+Resources:
+
+  ServerSecurityGroupClase:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Ref SecurityGroupDescription
+
+      SecurityGroupIngress:
+
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+      Tags:
+        - Key: Name
+          Value: SG-HTTP-Clase-CF
+
+  MyEc2Github:
+    Type: AWS::EC2::Instance
+    Properties:
+
+      ImageId: ami-0fff1b9a61dec8a5f
+      InstanceType: t3.micro
+
+      SecurityGroupIds:
+        - !Ref ServerSecurityGroupClase
+
+      Tags:
+        - Key: Name
+          Value: EC2-Clase-CF
+
+        - Key: Proyecto
+          Value: Class-CloudFormation
+
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          systemctl start httpd
+          systemctl enable httpd
+
+          echo "<html><body>
+          <h1>${InstanceDescription} 👏</h1>
+          <h2>Hola desde CloudFormation con GitHub 🚀</h2>
+          </body></html>" > /var/www/html/index.html
+
+Outputs:
+
+  InstanceId:
+    Value: !Ref MyEc2Github
+
+  PublicIP:
+    Value: !GetAtt MyEc2Github.PublicIp
+
+    
